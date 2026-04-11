@@ -280,3 +280,274 @@ services:
       FORWARDER_INTERVAL_SECONDS: ${FORWARDER_INTERVAL_SECONDS:-10}
     networks: [artifact_net]
     profiles: [sa]
+
+  logingpt-traefik:
+    image: traefik:v2.10
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5672:5672"
+    healthcheck:
+      test: traefik healthcheck
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/logingpt/traefik/logs:/mnt/logs
+      - ./data/logingpt/traefik/acme:/mnt/acme
+    environment:
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_API=true
+      - TRAEFIK_API_DASHBOARD=true
+      - TRAEFIK_PING=true
+      - TRAEFIK_LOG=true
+      - TRAEFIK_LOG_FILEPATH=/mnt/logs/traefik.log
+      - TRAEFIK_ACCESSLOG=true
+      - TRAEFIK_ACCESSLOG_FILEPATH=/mnt/logs/access.log
+      - TRAEFIK_METRICS_PROMETHEUS=true
+      - TRAEFIK_ENTRYPOINTS_WEB=true
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE=true
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_AMQP=true
+      - TRAEFIK_ENTRYPOINTS_AMQP_ADDRESS=:5672
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-rabbit:
+    image: rabbitmq:3.12-management
+    hostname: rabbit
+    restart: unless-stopped
+    ports:
+      - "15762:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q check_running
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ../LoginGPT/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ../LoginGPT/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./data/logingpt/rabbit:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${ADMIN_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${ADMIN_PASS:-changeme}
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-mongo:
+    image: mongo:4.4.6
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ./data/logingpt/mongo:/data/db
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-mongo-express:
+    image: mongo-express:0.54.0
+    restart: unless-stopped
+    depends_on:
+      logingpt-mongo:
+        condition: service_healthy
+    ports:
+      - "8085:8081"
+    healthcheck:
+      test: wget -q -O /dev/null 127.0.0.1:8081
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=logingpt-mongo
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-minio:
+    image: minio/minio:RELEASE.2023-12-14T18-51-57Z-cpuv1
+    command: server /data --console-address ":9090"
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ./data/logingpt/minio:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-redis:
+    image: redis:7.2.3
+    command: redis-server --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping | grep PONG
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ./data/logingpt/redis:/data
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-searxng:
+    image: searxng/searxng:2023.12.11-8a4104b99
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: wget -q -O- 127.0.0.1:8080 &> /dev/null
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ../LoginGPT/searxng/settings.yml:/etc/searxng/settings.yml
+      - ../LoginGPT/searxng/uwsgi.ini:/etc/searxng/uwsgi.ini
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-brain:
+    image: sacmat/logingpt-brain:artifact
+    build:
+      context: ../LoginGPT/brain
+      dockerfile: Dockerfile
+    command: pipenv run gunicorn -w 8 -k eventlet -b 0.0.0.0:8080 --timeout 7200 "app:create_app()"
+    restart: unless-stopped
+    depends_on:
+      logingpt-rabbit:
+        condition: service_healthy
+      logingpt-mongo:
+        condition: service_healthy
+      logingpt-minio:
+        condition: service_healthy
+      logingpt-redis:
+        condition: service_healthy
+    ports:
+      - "8084:8080"
+    healthcheck:
+      test: curl -f http://localhost:8080/api/ping
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - FLASK_DEBUG=0
+      - GUEST_USER=${GUEST_USER:-guest}
+      - GUEST_PASS=${GUEST_PASS:-changeme}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme}
+      - RABBITMQ_HOST=logingpt-rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_PORT_API=15672
+      - MONGODB_HOST=logingpt-mongo
+      - MONGODB_PORT=27017
+      - MINIO_HOST=logingpt-minio
+      - MINIO_PORT=9000
+      - REDIS_HOST=logingpt-redis
+      - REDIS_PORT=6379
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-worker:
+    image: sacmat/logingpt-worker:artifact
+    build:
+      context: ../LoginGPT/worker
+      dockerfile: Dockerfile
+    command: xvfb-run -a python app.py
+    restart: unless-stopped
+    init: true
+    ipc: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - seccomp=../LoginGPT/worker/seccomp_profile.json
+    depends_on:
+      logingpt-searxng:
+        condition: service_healthy
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    volumes:
+      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows
+      - ../LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
+      - ./data/logingpt/screenshots:/tmp/screenshots
+      - ./data/vlm_cache.json:/app/data/vlm_cache.json:ro
+      - type: tmpfs
+        target: /tmpfs
+    deploy:
+      mode: replicated
+      replicas: ${WORKER_REPLICAS:-2}
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TMP_PATH=/tmpfs
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme}
+      - RABBITMQ_HOST=logingpt-rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_TLS=0
+      - RABBITMQ_QUEUE=landscape_analysis_treq
+      - BRAIN_URL=http://logingpt-brain:8080
+      - SEARXNG_URL=http://logingpt-searxng:8080
+      - QWEN_BASE_URL=${QWEN_BASE_URL}
+      - QWEN_API_KEY=${QWEN_API_KEY:-token-abc123}
+      - QWEN_MODEL=${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}
+      - OS_ATLAS_BASE_URL=${OS_ATLAS_BASE_URL}
+      - OS_ATLAS_API_KEY=${OS_ATLAS_API_KEY:-token-abc123}
+      - OS_ATLAS_MODEL=${OS_ATLAS_MODEL:-OS-Copilot/OS-Atlas-Base-7B}
+      - VLM_CACHE_MODE=${VLM_CACHE_MODE:-live_with_fallback}
+      - VLM_CACHE_PATH=/app/data/vlm_cache.json
+      - LOGINGPT_OVERLAY_CLICKS=${LOGINGPT_OVERLAY_CLICKS:-true}
+      - OTEL_SERVICE_NAME=sso-crawler
+      - SERVICE_NAME=login-page-detection
+      - JAEGER_ENDPOINT=${JAEGER_ENDPOINT:-http://jaeger:14268/api/traces}
+      - PROMETHEUS_PORT=9464
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-jupyter:
+    image: sacmat/logingpt-jupyter:artifact
+    build:
+      context: ../LoginGPT/jupyter
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      logingpt-mongo:
+        condition: service_healthy
+      logingpt-minio:
+        condition: service_healthy
+    ports:
+      - "53833:8888"
+    deploy:
+      resources:
+        limits:
+          memory: ${JUPYTER_MEMORY_LIMIT:-4G}
+    healthcheck:
+      test: curl -f localhost:8888
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - ./data/logingpt/jupyter:/home/jovyan
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme}
+      - MONGODB_HOST=logingpt-mongo
+      - MONGODB_PORT=27017
+      - MINIO_HOST=logingpt-minio
+      - MINIO_PORT=9000
+    networks: [artifact_net]
+    profiles: [logingpt]
