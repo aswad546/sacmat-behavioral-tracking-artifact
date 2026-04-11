@@ -1,0 +1,282 @@
+# Profiles: logingpt | crawl | sa | observability (overlay file)
+# vv8-postgres carries both crawl and sa so analyze-only brings it up.
+
+networks:
+  artifact_net:
+    driver: bridge
+
+volumes:
+  logingpt-minio-data:
+  logingpt-mongo-data:
+
+services:
+
+  vv8-postgres:
+    image: sacmat/vv8-postgres:artifact
+    build:
+      context: ../visiblev8-crawler/vv8_backend_database
+      dockerfile: Dockerfile
+    command: postgres -c config_file=/etc/postgresql.conf
+    restart: unless-stopped
+    ports:
+      - "5434:5432/tcp"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vv8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      POSTGRES_DB: ${POSTGRES_DB:-vv8_backend}
+      PGDATA: /var/lib/postgresql/data/pg_data
+    volumes:
+      - ./data/vv8/postgres:/var/lib/postgresql/data
+    networks: [artifact_net]
+    profiles: [crawl, sa]
+
+  vv8-celery-redis:
+    image: redis:6.2
+    restart: unless-stopped
+    ports:
+      - "6380:6379/tcp"
+    volumes:
+      - ./data/vv8/redis:/data
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-mongo:
+    image: mongo:4
+    restart: unless-stopped
+    command: --wiredTigerCacheSizeGB 2.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-vv8}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-vv8}
+    ports:
+      - "27019:27017/tcp"
+    volumes:
+      - ./data/vv8/mongo:/data/db
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-backend:
+    image: sacmat/vv8-backend:artifact
+    build:
+      context: ../visiblev8-crawler/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis, vv8-postgres, vv8-mongo]
+    ports:
+      - "4000:4000/tcp"
+    environment:
+      VV8_CELERY_BROKER: vv8-celery-redis
+      VV8_CELERY_BROKER_PORT: 6379
+      VV8_CELERY_ID: vv8_web_server
+      SQL_USER: ${POSTGRES_USER:-vv8}
+      SQL_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      SQL_HOST: vv8-postgres
+      SQL_PORT: 5432
+      SQL_DATABASE: ${POSTGRES_DB:-vv8_backend}
+      MONGO_HOST: vv8-mongo
+      MONGO_PORT: 27017
+      MONGO_USER: ${MONGO_INITDB_ROOT_USERNAME:-vv8}
+      MONGO_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-vv8}
+      MONGO_DATABASE: admin
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-worker:
+    # TODO pre-submission: pin visiblev8/vv8-base image to a digest in
+    # ../visiblev8-crawler/celery_workers/vv8_worker.dockerfile and retag
+    # to aswad546/vv8-worker-artifact:sacmat2026 on Docker Hub.
+    image: sacmat/vv8-worker:artifact
+    build:
+      context: ../visiblev8-crawler/celery_workers
+      dockerfile: vv8_worker.dockerfile
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis, vv8-postgres]
+    ports:
+      - "5901:5901/tcp"
+      - "6901:6901/tcp"
+      - "9465:9464/tcp"
+    environment:
+      VV8_CELERY_BROKER: vv8-celery-redis
+      VV8_CELERY_BROKER_PORT: 6379
+      VV8_CELERY_ID: vv8_worker
+      CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-2}
+      MONGO_HOST: vv8-mongo
+      MONGO_PORT: 27017
+      MONGO_USER: ${MONGO_INITDB_ROOT_USERNAME:-vv8}
+      MONGO_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-vv8}
+      MONGO_DATABASE: admin
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-http://jaeger:14268/api/traces}
+      OTEL_SERVICE_NAME: web-crawler
+      NODE_ENV: production
+    volumes:
+      - ./data/vv8/screenshots:/app/screenshots:rwx
+      - ./data/vv8/har:/app/har:rwx
+      - ../visiblev8-crawler/celery_workers/vv8_worker/vv8_crawler:/app/node:rwx
+      - /app/node/node_modules
+      - ./data/vv8/raw_logs:/app/vv8_worker/raw_logs:rwx
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "com.prometheus.scrape=true"
+      - "com.prometheus.port=9464"
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-log-parser-worker:
+    image: sacmat/vv8-log-parser:artifact
+    build:
+      context: ../visiblev8-crawler/celery_workers
+      dockerfile: log_parser.dockerfile
+      args:
+        DOCKER_IMAGE: visiblev8/vv8-postprocessors:latest
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis, vv8-postgres, vv8-mongo]
+    environment:
+      VV8_CELERY_BROKER: vv8-celery-redis
+      VV8_CELERY_BROKER_PORT: 6379
+      VV8_CELERY_ID: vv8_log_parser
+      MONGODB_HOST: vv8-mongo
+      MONGODB_PORT: 27017
+      MONGODB_USER: ${MONGO_INITDB_ROOT_USERNAME:-vv8}
+      MONGODB_PWD: ${MONGO_INITDB_ROOT_PASSWORD:-vv8}
+      MONGODB_AUTHDB: admin
+      CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-2}
+      PGHOST: vv8-postgres
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-vv8}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      PGDATABASE: ${POSTGRES_DB:-vv8_backend}
+      ADBLOCK_BINARY: /app/post-processors/adblock
+      EASYPRIVACY_FILE: /app/post-processors/easyprivacy.txt
+      EASYLIST_FILE: /app/post-processors/easylist.txt
+      EMAP_FILE: /app/post-processors/entities.json
+      IDLDATA_FILE: /artifacts/idldata.json
+    volumes:
+      - ./data/vv8/raw_logs:/app/raw_logs:rwx
+      - ./data/vv8/parsed_logs:/app/parsed_logs:rwx
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-flower:
+    image: sacmat/vv8-flower:artifact
+    build:
+      context: ../visiblev8-crawler/flower
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis, vv8-postgres]
+    environment:
+      FLOWER_UNAUTHENTICATED_API: "True"
+    ports:
+      - "5555:5555/tcp"
+    volumes:
+      - ./data/vv8/flower:/etc/db:rwx
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-celery-exporter:
+    image: danihodovic/celery-exporter
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis]
+    ports:
+      - "9809:9808"
+    command: ["--broker-url=redis://vv8-celery-redis:6379/0"]
+    labels:
+      - "com.prometheus.scrape=true"
+      - "com.prometheus.port=9808"
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  vv8-redis-exporter:
+    image: oliver006/redis_exporter:latest
+    restart: unless-stopped
+    depends_on: [vv8-celery-redis]
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://vv8-celery-redis:6379
+    networks: [artifact_net]
+    profiles: [crawl]
+
+  bbsa-rabbit:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - "5762:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/bbsa/rabbit:/var/lib/rabbitmq
+    networks: [artifact_net]
+    profiles: [sa]
+
+  bbsa-api:
+    image: sacmat/bbsa-api:artifact
+    build:
+      context: ../BehavioralBiometricSA/static_analysis
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      bbsa-rabbit:
+        condition: service_healthy
+    ports:
+      - "8100:8100"
+    environment:
+      DB_HOST: vv8-postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-vv8_backend}
+      DB_USER: ${POSTGRES_USER:-vv8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      DB_WRITE_MODE: immediate
+      DROP_TABLE: "false"
+      RABBITMQ_HOST: bbsa-rabbit
+      RABBITMQ_PORT: 5672
+      RABBITMQ_QUEUE: job_queue
+    networks: [artifact_net]
+    profiles: [sa]
+
+  bbsa-worker:
+    image: sacmat/bbsa-worker:artifact
+    build:
+      context: ../BehavioralBiometricSA/static_analysis
+      dockerfile: Dockerfile.worker
+    restart: always
+    depends_on:
+      bbsa-rabbit:
+        condition: service_healthy
+    deploy:
+      mode: replicated
+      replicas: ${BBSA_WORKER_REPLICAS:-4}
+    environment:
+      DB_HOST: vv8-postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-vv8_backend}
+      DB_USER: ${POSTGRES_USER:-vv8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      DB_WRITE_MODE: immediate
+      RABBITMQ_HOST: bbsa-rabbit
+      RABBITMQ_PORT: 5672
+      RABBITMQ_QUEUE: job_queue
+    volumes:
+      - ./data/bbsa/graphs:/app/worker/graphs
+    networks: [artifact_net]
+    profiles: [sa]
+
+  vv8-bbsa-forwarder:
+    image: sacmat/vv8-bbsa-forwarder:artifact
+    build:
+      context: ../visiblev8-crawler
+      dockerfile: ../sacmat-behavioral-tracking-artifact/forwarder/Dockerfile
+    restart: unless-stopped
+    depends_on: [vv8-postgres, bbsa-api]
+    environment:
+      DB_HOST: vv8-postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-vv8_backend}
+      DB_USER: ${POSTGRES_USER:-vv8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
+      BBSA_API_URL: http://bbsa-api:8100/analyze
+      FORWARDER_INTERVAL_SECONDS: ${FORWARDER_INTERVAL_SECONDS:-10}
+    networks: [artifact_net]
+    profiles: [sa]
