@@ -14,7 +14,7 @@ services:
   vv8-postgres:
     image: sacmat/vv8-postgres:artifact
     build:
-      context: ../visiblev8-crawler/vv8_backend_database
+      context: ./visiblev8-crawler/vv8_backend_database
       dockerfile: Dockerfile
     command: postgres -c config_file=/etc/postgresql.conf
     restart: unless-stopped
@@ -57,7 +57,7 @@ services:
   vv8-backend:
     image: sacmat/vv8-backend:artifact
     build:
-      context: ../visiblev8-crawler/backend
+      context: ./visiblev8-crawler/backend
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on: [vv8-celery-redis, vv8-postgres, vv8-mongo]
@@ -82,11 +82,11 @@ services:
 
   vv8-worker:
     # TODO pre-submission: pin visiblev8/vv8-base image to a digest in
-    # ../visiblev8-crawler/celery_workers/vv8_worker.dockerfile and retag
+    # ./visiblev8-crawler/celery_workers/vv8_worker.dockerfile and retag
     # to aswad546/vv8-worker-artifact:sacmat2026 on Docker Hub.
     image: sacmat/vv8-worker:artifact
     build:
-      context: ../visiblev8-crawler/celery_workers
+      context: ./visiblev8-crawler/celery_workers
       dockerfile: vv8_worker.dockerfile
     restart: unless-stopped
     depends_on: [vv8-celery-redis, vv8-postgres]
@@ -110,7 +110,7 @@ services:
     volumes:
       - ./data/vv8/screenshots:/app/screenshots:rwx
       - ./data/vv8/har:/app/har:rwx
-      - ../visiblev8-crawler/celery_workers/vv8_worker/vv8_crawler:/app/node:rwx
+      - ./visiblev8-crawler/celery_workers/vv8_worker/vv8_crawler:/app/node:rwx
       - /app/node/node_modules
       - ./data/vv8/raw_logs:/app/vv8_worker/raw_logs:rwx
       - /var/run/docker.sock:/var/run/docker.sock
@@ -123,7 +123,7 @@ services:
   vv8-log-parser-worker:
     image: sacmat/vv8-log-parser:artifact
     build:
-      context: ../visiblev8-crawler/celery_workers
+      context: ./visiblev8-crawler/celery_workers
       dockerfile: log_parser.dockerfile
       args:
         DOCKER_IMAGE: visiblev8/vv8-postprocessors:latest
@@ -158,7 +158,7 @@ services:
   vv8-flower:
     image: sacmat/vv8-flower:artifact
     build:
-      context: ../visiblev8-crawler/flower
+      context: ./visiblev8-crawler/flower
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on: [vv8-celery-redis, vv8-postgres]
@@ -214,7 +214,7 @@ services:
   bbsa-api:
     image: sacmat/bbsa-api:artifact
     build:
-      context: ../BehavioralBiometricSA/static_analysis
+      context: ./BehavioralBiometricSA/static_analysis
       dockerfile: Dockerfile.api
     restart: unless-stopped
     depends_on:
@@ -239,7 +239,7 @@ services:
   bbsa-worker:
     image: sacmat/bbsa-worker:artifact
     build:
-      context: ../BehavioralBiometricSA/static_analysis
+      context: ./BehavioralBiometricSA/static_analysis
       dockerfile: Dockerfile.worker
     restart: always
     depends_on:
@@ -266,8 +266,8 @@ services:
   vv8-bbsa-forwarder:
     image: sacmat/vv8-bbsa-forwarder:artifact
     build:
-      context: ../visiblev8-crawler
-      dockerfile: ../sacmat-behavioral-tracking-artifact/forwarder/Dockerfile
+      context: .
+      dockerfile: forwarder/Dockerfile
     restart: unless-stopped
     depends_on: [vv8-postgres, bbsa-api]
     environment:
@@ -329,8 +329,8 @@ services:
       timeout: 10s
       retries: 15
     volumes:
-      - ../LoginGPT/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-      - ../LoginGPT/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./LoginGPT/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./LoginGPT/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
       - ./data/logingpt/rabbit:/var/lib/rabbitmq
     environment:
       - RABBITMQ_DEFAULT_USER=${ADMIN_USER:-admin}
@@ -430,15 +430,15 @@ services:
       timeout: 10s
       retries: 15
     volumes:
-      - ../LoginGPT/searxng/settings.yml:/etc/searxng/settings.yml
-      - ../LoginGPT/searxng/uwsgi.ini:/etc/searxng/uwsgi.ini
+      - ./LoginGPT/searxng/settings.yml:/etc/searxng/settings.yml
+      - ./LoginGPT/searxng/uwsgi.ini:/etc/searxng/uwsgi.ini
     networks: [artifact_net]
     profiles: [logingpt]
 
   logingpt-brain:
     image: sacmat/logingpt-brain:artifact
     build:
-      context: ../LoginGPT/brain
+      context: ./LoginGPT/brain
       dockerfile: Dockerfile
     command: pipenv run gunicorn -w 8 -k eventlet -b 0.0.0.0:8080 --timeout 7200 "app:create_app()"
     restart: unless-stopped
@@ -480,7 +480,7 @@ services:
   logingpt-worker:
     image: sacmat/logingpt-worker:artifact
     build:
-      context: ../LoginGPT/worker
+      context: ./LoginGPT/worker
       dockerfile: Dockerfile
     command: xvfb-run -a python app.py
     restart: unless-stopped
@@ -489,7 +489,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     security_opt:
-      - seccomp=../LoginGPT/worker/seccomp_profile.json
+      - seccomp=./LoginGPT/worker/seccomp_profile.json
     depends_on:
       logingpt-searxng:
         condition: service_healthy
@@ -497,8 +497,8 @@ services:
       - 1.1.1.1
       - 1.0.0.1
     volumes:
-      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows
-      - ../LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
+      - ./LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows
+      - ./LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
       - ./data/logingpt/screenshots:/tmp/screenshots
       - ./data/vlm_cache.json:/app/data/vlm_cache.json:ro
       - type: tmpfs
@@ -542,7 +542,7 @@ services:
   logingpt-qwen-bridge:
     image: sacmat/logingpt-qwen-bridge:artifact
     build:
-      context: ../LoginGPT/worker-backend
+      context: ./LoginGPT/worker-backend
       dockerfile: Dockerfile.bridge
     command: python classify_screenshots_parrallel.py
     restart: unless-stopped
@@ -551,15 +551,15 @@ services:
       QWEN_API_KEY: ${QWEN_API_KEY:-token-abc123}
       QWEN_MODEL: ${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}
     volumes:
-      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
-      - ../LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
+      - ./LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
+      - ./LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
     networks: [artifact_net]
     profiles: [logingpt]
 
   logingpt-atlas-bridge:
     image: sacmat/logingpt-atlas-bridge:artifact
     build:
-      context: ../LoginGPT/worker-backend
+      context: ./LoginGPT/worker-backend
       dockerfile: Dockerfile.bridge
     command: python vllm_backend.py
     restart: unless-stopped
@@ -568,14 +568,14 @@ services:
       OS_ATLAS_API_KEY: ${OS_ATLAS_API_KEY:-token-abc123}
       OS_ATLAS_MODEL: ${OS_ATLAS_MODEL:-OS-Copilot/OS-Atlas-Base-7B}
     volumes:
-      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
+      - ./LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
     networks: [artifact_net]
     profiles: [logingpt]
 
   logingpt-jupyter:
     image: sacmat/logingpt-jupyter:artifact
     build:
-      context: ../LoginGPT/jupyter
+      context: ./LoginGPT/jupyter
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:

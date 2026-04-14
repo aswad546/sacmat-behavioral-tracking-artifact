@@ -11,6 +11,8 @@ models (Qwen2.5-VL-7B and OS-Atlas-Base-7B) hosted on Modal.
 ## Quick start
 
 ```
+git clone --recursive https://github.com/aswad546/sacmat-behavioral-tracking-artifact.git
+cd sacmat-behavioral-tracking-artifact
 cp .env.example .env
 make modal-deploy              # one-time, deploys Qwen + OS-Atlas to Modal
 # paste the two URLs Modal prints into .env as QWEN_BASE_URL / OS_ATLAS_BASE_URL
@@ -79,14 +81,9 @@ seed/                            pre-computed landscape_analysis docs
 targets/                         URL lists
 forwarder/                       VV8 → BBSA polling sidecar
 scripts/                         smoke tests, submit helpers, result checker
-../LoginGPT/                     vendored subsystem (build context)
-../visiblev8-crawler/            vendored subsystem
-../BehavioralBiometricSA/        vendored subsystem
-../visiblev8/                    archive only — custom Go post-processor
-                                 fork with inline BBSA POST logic. Not
-                                 built or used at runtime; the polling
-                                 sidecar (forwarder/) handles the handoff
-                                 equivalently.
+LoginGPT/                        git submodule (login page discovery)
+visiblev8-crawler/               git submodule (instrumented JS collection)
+BehavioralBiometricSA/           git submodule (static analysis)
 ```
 
 ## Troubleshooting

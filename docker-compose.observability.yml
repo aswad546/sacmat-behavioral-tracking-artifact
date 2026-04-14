@@ -29,7 +29,7 @@ services:
     ports:
       - "9091:9090"
     volumes:
-      - ../visiblev8-crawler/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./visiblev8-crawler/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./data/observability/prometheus:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -49,8 +49,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - ../visiblev8-crawler/grafana/provisioning:/etc/grafana/provisioning
-      - ../visiblev8-crawler/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./visiblev8-crawler/grafana/provisioning:/etc/grafana/provisioning
+      - ./visiblev8-crawler/grafana/dashboards:/var/lib/grafana/dashboards
       - ./data/observability/grafana:/var/lib/grafana
     networks: [artifact_net]
     profiles: [observability]
@@ -62,7 +62,7 @@ services:
       - "3101:3100"
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
-      - ../visiblev8-crawler/loki:/etc/loki:ro
+      - ./visiblev8-crawler/loki:/etc/loki:ro
       - ./data/observability/loki:/tmp/loki
     networks: [artifact_net]
     profiles: [observability]
@@ -74,7 +74,7 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ../visiblev8-crawler/loki:/etc/promtail:ro
+      - ./visiblev8-crawler/loki:/etc/promtail:ro
     command: -config.file=/etc/promtail/promtail-config.yaml
     networks: [artifact_net]
     profiles: [observability]
@@ -92,7 +92,7 @@ services:
       - "4318:4318"
       - "55679:55679"
     volumes:
-      - ../visiblev8-crawler/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+      - ./visiblev8-crawler/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     networks: [artifact_net]
     profiles: [observability]

@@ -1,0 +1,9 @@
+[submodule "LoginGPT"]
+	path = LoginGPT
+	url = https://github.com/aswad546/LoginGPT.git
+[submodule "visiblev8-crawler"]
+	path = visiblev8-crawler
+	url = https://github.com/aswad546/visiblev8-crawler.git
+[submodule "BehavioralBiometricSA"]
+	path = BehavioralBiometricSA
+	url = https://github.com/aswad546/BehavioralBiometricSA.git
