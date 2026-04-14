@@ -351,6 +351,22 @@ services:
     networks: [artifact_net]
     profiles: [logingpt]
 
+  logingpt-mongo-seed:
+    image: sacmat/logingpt-mongo-seed:artifact
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    depends_on:
+      logingpt-mongo:
+        condition: service_healthy
+    environment:
+      MONGODB_HOST: logingpt-mongo
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: sso-monitor
+    restart: "no"
+    networks: [artifact_net]
+    profiles: [logingpt]
+
   logingpt-mongo-express:
     image: mongo-express:0.54.0
     restart: unless-stopped
@@ -511,10 +527,48 @@ services:
       - VLM_CACHE_MODE=${VLM_CACHE_MODE:-live_with_fallback}
       - VLM_CACHE_PATH=/app/data/vlm_cache.json
       - LOGINGPT_OVERLAY_CLICKS=${LOGINGPT_OVERLAY_CLICKS:-true}
+      - CLASSIFICATION_HOST=logingpt-qwen-bridge
+      - CLASSIFICATION_PORT=5060
+      - VLLM_BACKEND_HOST=logingpt-atlas-bridge
+      - VLLM_BACKEND_PORT=5000
+      - VV8_SUBMIT_URL=http://vv8-backend:4000/api/v1/urlsubmit-actions
       - OTEL_SERVICE_NAME=sso-crawler
       - SERVICE_NAME=login-page-detection
       - JAEGER_ENDPOINT=${JAEGER_ENDPOINT:-http://jaeger:14268/api/traces}
       - PROMETHEUS_PORT=9464
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-qwen-bridge:
+    image: sacmat/logingpt-qwen-bridge:artifact
+    build:
+      context: ../LoginGPT/worker-backend
+      dockerfile: Dockerfile.bridge
+    command: python classify_screenshots_parrallel.py
+    restart: unless-stopped
+    environment:
+      QWEN_BASE_URL: ${QWEN_BASE_URL}
+      QWEN_API_KEY: ${QWEN_API_KEY:-token-abc123}
+      QWEN_MODEL: ${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}
+    volumes:
+      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
+      - ../LoginGPT/worker/modules/loginpagedetection/output_images:/app/modules/loginpagedetection/output_images
+    networks: [artifact_net]
+    profiles: [logingpt]
+
+  logingpt-atlas-bridge:
+    image: sacmat/logingpt-atlas-bridge:artifact
+    build:
+      context: ../LoginGPT/worker-backend
+      dockerfile: Dockerfile.bridge
+    command: python vllm_backend.py
+    restart: unless-stopped
+    environment:
+      OS_ATLAS_BASE_URL: ${OS_ATLAS_BASE_URL}
+      OS_ATLAS_API_KEY: ${OS_ATLAS_API_KEY:-token-abc123}
+      OS_ATLAS_MODEL: ${OS_ATLAS_MODEL:-OS-Copilot/OS-Atlas-Base-7B}
+    volumes:
+      - ../LoginGPT/worker/modules/loginpagedetection/screenshot_flows:/app/modules/loginpagedetection/screenshot_flows:ro
     networks: [artifact_net]
     profiles: [logingpt]
 

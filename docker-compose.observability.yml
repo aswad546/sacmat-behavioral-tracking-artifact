@@ -1,0 +1,98 @@
+# Layer on top of docker-compose.artifact.yml with `make up-obs`.
+# Services activate with --profile observability.
+
+services:
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60.0
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "6831:6831/udp"
+      - "14268:14268"
+      - "14250:14250"
+      - "14318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      - ./data/observability/jaeger:/badger
+    networks: [artifact_net]
+    profiles: [observability]
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ../visiblev8-crawler/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/observability/prometheus:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.retention.time=30d"
+    networks: [artifact_net]
+    profiles: [observability]
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on: [prometheus, loki]
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../visiblev8-crawler/grafana/provisioning:/etc/grafana/provisioning
+      - ../visiblev8-crawler/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./data/observability/grafana:/var/lib/grafana
+    networks: [artifact_net]
+    profiles: [observability]
+
+  loki:
+    image: grafana/loki:3.4.1
+    restart: unless-stopped
+    ports:
+      - "3101:3100"
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ../visiblev8-crawler/loki:/etc/loki:ro
+      - ./data/observability/loki:/tmp/loki
+    networks: [artifact_net]
+    profiles: [observability]
+
+  promtail:
+    image: grafana/promtail:3.4.1
+    restart: unless-stopped
+    depends_on: [loki]
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../visiblev8-crawler/loki:/etc/promtail:ro
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    networks: [artifact_net]
+    profiles: [observability]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    restart: unless-stopped
+    depends_on: [jaeger, prometheus]
+    ports:
+      - "1888:1888"
+      - "8888:8888"
+      - "8889:8889"
+      - "13133:13133"
+      - "4317:4317"
+      - "4318:4318"
+      - "55679:55679"
+    volumes:
+      - ../visiblev8-crawler/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    networks: [artifact_net]
+    profiles: [observability]

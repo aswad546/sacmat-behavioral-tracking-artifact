@@ -1,0 +1,4 @@
+# Drop in any newline-separated URL list to scale up the run.
+# Default contents mirror targets_mini.txt — replace with a larger list
+# and bump WORKER_REPLICAS / CELERY_CONCURRENCY / BBSA_WORKER_REPLICAS
+# to match your machine.

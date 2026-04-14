@@ -1,0 +1,381 @@
+[
+  {
+    "domain": "www.fandm.bank",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-fandm", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.fandm.bank", "url": "https://www.fandm.bank/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://www.fandm.bank/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1125, "y": 99}, "elementHTML": "<span class=\"icon icon-olb\" aria-hidden=\"true\">Login</span>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fandm_bank/flow_0/page_1.png", "url": "https://www.fandm.bank/"}
+          ]
+        },
+        {
+          "login_page_candidate": "https://www.olb-ebanking.com/062204530/login/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1125, "y": 99}, "elementHTML": "<span class=\"icon icon-olb\" aria-hidden=\"true\">Login</span>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fandm_bank/flow_0/page_1.png", "url": "https://www.fandm.bank/"},
+            {"step": 2, "clickPosition": {"x": 1037, "y": 232}, "elementHTML": "<input type=\"submit\" id=\"submitBtn\" class=\"btn btn-default loginbutton\" value=\"Login\">", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fandm_bank/flow_0/page_2.png", "url": "https://www.fandm.bank/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.fnbforyou.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-fnbforyou", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.fnbforyou.com", "url": "https://www.fnbforyou.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://www.olb-ebanking.com/064107994/login/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 956, "y": 752}, "elementHTML": "<button class=\"ghost-btn-white js-cookie-accept\">Accept</button>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fnbforyou_com/flow_0/page_1.png", "url": "https://www.fnbforyou.com/"},
+            {"step": 2, "clickPosition": {"x": 1232, "y": 100}, "elementHTML": "<button class=\"drop-header login-button\"><span>Online Banking</span></button>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fnbforyou_com/flow_0/page_2.png", "url": "https://www.fnbforyou.com/"},
+            {"step": 3, "clickPosition": {"x": 163, "y": 658}, "elementHTML": "<a class=\"ghost-btn\" href=\"https://www.olb-ebanking.com/064107994/login/\">Log In</a>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fnbforyou_com/flow_0/page_3.png", "url": "https://www.fnbforyou.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.peoplesbankofgreensboro.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-peoplesbankofgreensboro", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "peoplesbankofgreensboro.com", "url": "https://peoplesbankofgreensboro.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://bank.peoplesbankofgreensboro.com/login",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 637, "y": 657}, "elementHTML": "<a data-ux-btn=\"primary\" data-aid=\"HEADER_CTA_BTN\" href=\"http://bank.peoplesbankofgreensboro.com\"></a>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_peoplesbankofgreensboro_com/flow_0/page_1.png", "url": "https://peoplesbankofgreensboro.com/"}
+          ]
+        },
+        {
+          "login_page_candidate": "https://bank.peoplesbankofgreensboro.com/login",
+          "login_page_strategy": "METASEARCH",
+          "login_page_priority": {"regex": "/(log|sign)[_\\-\\s]*(in|on)", "priority": 99}
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.libertybankal.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-libertybankal", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.libertybankal.com", "url": "https://www.libertybankal.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://www.libertybankal.com/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1193, "y": 30}, "elementHTML": "<div class=\"close\">x</div>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_libertybankal_com/flow_0/page_1.png", "url": "https://www.libertybankal.com/"},
+            {"step": 2, "clickPosition": {"x": 231, "y": 364}, "elementHTML": "<h2>Online Banking Login</h2>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_libertybankal_com/flow_0/page_2.png", "url": "https://www.libertybankal.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.cadencebank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-cadencebank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "cadencebank.com", "url": "https://cadencebank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://cadencebank.com/log-in", "login_page_strategy": "PATHS", "login_page_priority": {"regex": "/(log|sign)[_\\-\\s]*(in|on)", "priority": 99}},
+        {
+          "login_page_candidate": "https://cadencebank.com/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1194, "y": 59}, "elementHTML": "<a href=\"\" data-bs-target=\"#loginModal\" class=\"nav-link\">Login</a>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_cadencebank_com/flow_0/page_1.png", "url": "https://cadencebank.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.thestatebankgroup.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-thestatebankgroup", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.thestatebankgroup.com", "url": "https://www.thestatebankgroup.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://www.thestatebankgroup.com/user/login", "login_page_strategy": "PATHS", "login_page_priority": {"regex": "/(log|sign)[_\\-\\s]*(in|on)", "priority": 99}},
+        {
+          "login_page_candidate": "https://my.thestatebankgroup.com/login",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 704, "y": 155}, "elementHTML": "<span class=\"fas fa-money-bill-alt\"></span>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_thestatebankgroup_com/flow_0/page_1.png", "url": "https://www.thestatebankgroup.com/"},
+            {"step": 2, "clickPosition": {"x": 1191, "y": 30}, "elementHTML": "<button type=\"submit\">Sign in</button>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_thestatebankgroup_com/flow_0/page_2.png", "url": "https://www.thestatebankgroup.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.myunionfederal.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-myunionfederal", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.myunionfederal.com", "url": "https://www.myunionfederal.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://web1.secureinternetbank.com/pbi_pbi1151/login/remote/271172275",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1138, "y": 117}, "elementHTML": "<input type=\"submit\" class=\"Button2\" value=\"Login\">", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_myunionfederal_com/flow_0/page_1.png", "url": "https://www.myunionfederal.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.firstsecurebank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-firstsecurebank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.firstsecurebank.com", "url": "https://www.firstsecurebank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://my.firstsecurebank.com/login",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1171, "y": 123}, "elementHTML": "<span class=\"header-link__text\">Login</span>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_firstsecurebank_com/flow_0/page_1.png", "url": "https://www.firstsecurebank.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.mandmbank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-mandmbank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "mandmbank.com", "url": "https://mandmbank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://mandmbank.com/login", "login_page_strategy": "PATHS", "login_page_priority": {"regex": "/(log|sign)[_\\-\\s]*(in|on)", "priority": 99}},
+        {
+          "login_page_candidate": "https://secure.mandmbank.com/merchantsandmarinebankonline_40/Uux.aspx#/login",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 1181, "y": 81}, "elementHTML": "<a class=\"header-bottom-button\" target=\"_blank\">Login</a>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_mandmbank_com/flow_0/page_1.png", "url": "https://mandmbank.com/"}
+          ]
+        }
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.fmlafayette.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-fmlafayette", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.fmlafayette.com", "url": "https://www.fmlafayette.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {
+          "login_page_candidate": "https://www.fmlafayette.com/",
+          "login_page_strategy": "CRAWLING",
+          "login_page_actions": [
+            {"selectOptions": null},
+            {"step": 1, "clickPosition": {"x": 639, "y": 559}, "elementHTML": "<div>Got it, thanks!</div>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fmlafayette_com/flow_0/page_1.png", "url": "https://www.fmlafayette.com/"},
+            {"step": 2, "clickPosition": {"x": 1145, "y": 84}, "elementHTML": "<span class=\"olb__toggle-open\">Login</span>", "screenshot": "/app/modules/loginpagedetection/screenshot_flows/www_fmlafayette_com/flow_0/page_2.png", "url": "https://www.fmlafayette.com/"}
+          ]
+        },
+        {"login_page_candidate": "https://my.fmlafayette.com/login", "login_page_strategy": "METASEARCH", "login_page_priority": {"regex": "/(log|sign)[_\\-\\s]*(in|on)", "priority": 99}}
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.commstbk.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-commstbk", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.commstbk.com", "url": "https://www.commstbk.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.centralfederalsavings.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-centralfederalsavings", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "centralfederalsavings.com", "url": "https://centralfederalsavings.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "edinburgbank.net",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-edinburgbank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "edinburgbank.net", "url": "https://edinburgbank.net/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.mutualfederalbank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-mutualfederalbank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.mutualfederalbank.com", "url": "https://www.mutualfederalbank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://www.mutualfederalbank.com/", "login_page_strategy": "CRAWLING", "login_page_actions": [{"selectOptions": null}]}
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.frsb.net",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-frsb", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.frsb.net", "url": "https://www.frsb.net/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://www.frsb.net/", "login_page_strategy": "CRAWLING", "login_page_actions": [{"selectOptions": null}]}
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.356bank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-356bank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.356bank.com", "url": "https://www.356bank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  },
+  {
+    "domain": "www.bankccb.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-bankccb", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.bankccb.com", "url": "https://www.bankccb.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 400, "api_error": "No candidates provided in the payload"
+  },
+  {
+    "domain": "www.fmbal.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-fmbal", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.fmbal.com", "url": "https://www.fmbal.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 400, "api_error": "No candidates provided in the payload"
+  },
+  {
+    "domain": "www.firststatebank.bank",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-firststatebank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.firststatebank.bank", "url": "https://www.firststatebank.bank/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 400, "api_error": "No candidates provided in the payload"
+  },
+  {
+    "domain": "www.municipalbank.com",
+    "scan_config": {"scan_id": "artifact-smoke-20", "scan_type": "range", "list_id": "artifact", "offset": 0, "limit": 20},
+    "landscape_analysis_config": {},
+    "task_config": {"task_id": "seed-municipalbank", "task_state": "RESPONSE_RECEIVED"},
+    "landscape_analysis_result": {
+      "resolved": {"reachable": true, "domain": "www.municipalbank.com", "url": "https://www.municipalbank.com/"},
+      "timings": {"total_duration_seconds": 0.0},
+      "login_page_candidates": [
+        {"login_page_candidate": "https://www.municipalbank.com/resources/account-safety", "login_page_strategy": "SITEMAP", "login_page_priority": {"regex": "/(accounts?|profiles?|users?)", "priority": 88}}
+      ],
+      "recognized_idps": [], "recognized_idps_passive": [], "recognized_navcreds": [], "recognized_lastpass_icons": []
+    },
+    "api_status": 200, "api_error": null
+  }
+]

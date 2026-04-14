@@ -3,7 +3,7 @@ COMPOSE := docker compose -f docker-compose.artifact.yml
 COMPOSE_OBS := $(COMPOSE) -f docker-compose.observability.yml
 FULL_PROFILES := --profile logingpt --profile crawl --profile sa
 
-.PHONY: help up down full login-only crawl-only analyze-only \
+.PHONY: help up down full login-only crawl-only analyze-only classify \
         smoke results modal-deploy logs up-obs clean validate
 
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "analyze-only    Only BBSA + vv8-postgres"
 	@echo "smoke           20-URL end-to-end smoke test"
 	@echo "results         Paper-claim table from multicore_static_info"
+	@echo "classify        Run the RF classifier against multicore_static_info"
 	@echo "modal-deploy    Deploy Qwen + OS-Atlas to Modal"
 	@echo "up-obs          Full pipeline + observability overlay"
 	@echo "logs            Tail all logs"
@@ -39,6 +40,14 @@ smoke:
 
 results:
 	python scripts/check_results.py
+
+classify:
+	docker build -t sacmat/classifier:artifact classifier/
+	docker run --rm --network sacmat-behavioral-tracking-artifact_artifact_net \
+		-e PGHOST=vv8-postgres -e PGPORT=5432 \
+		-e PGUSER=$${POSTGRES_USER:-vv8} -e PGPASSWORD=$${POSTGRES_PASSWORD:-vv8} \
+		-e PGDATABASE=$${POSTGRES_DB:-vv8_backend} \
+		sacmat/classifier:artifact
 
 modal-deploy:
 	modal deploy modal/qwen_app.py
