@@ -491,10 +491,9 @@ class MalwareClassificationPipeline:
         # Classify
         results_df = self.classify_scripts(features_df)
         
-        # Create results table
+        results_df = results_df.drop_duplicates(subset='script_id', keep='last')
+
         self.create_results_table(results_table)
-        
-        # Save results
         self.save_results(results_df, results_table)
         
         # Create view
