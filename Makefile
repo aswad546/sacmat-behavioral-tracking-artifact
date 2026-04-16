@@ -39,7 +39,12 @@ smoke:
 	./scripts/smoke_test.sh
 
 results:
-	python scripts/check_results.py
+	@docker build -q -t sacmat/results-checker:latest -f scripts/Dockerfile.results scripts/
+	@docker run --rm --network sacmat-behavioral-tracking-artifact_artifact_net \
+		-e PGHOST=vv8-postgres -e PGPORT=5432 \
+		-e PGUSER=$${POSTGRES_USER:-vv8} -e PGPASSWORD=$${POSTGRES_PASSWORD:-vv8} \
+		-e PGDATABASE=$${POSTGRES_DB:-vv8_backend} \
+		sacmat/results-checker:latest
 
 classify:
 	docker build -t sacmat/classifier:artifact classifier/

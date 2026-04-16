@@ -24,10 +24,10 @@ def main():
         payload = {
             "url": c["login_page_candidate"],
             "actions": c.get("login_page_actions") or [],
-            "rerun": False,
+            "rerun": True,
             "scan_domain": doc["domain"],
             "task_id": str(uuid.uuid4()),
-            "parser_config": {"delete_log_after_parsing": False, "output_format": "postgresql"},
+            "parser_config": {"parser": "flow", "delete_log_after_parsing": False, "output_format": "postgresql"},
         }
         r = requests.post(VV8_URL, json=payload, timeout=30)
         if r.status_code >= 400:

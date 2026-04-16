@@ -67,7 +67,7 @@ services:
       VV8_CELERY_BROKER: vv8-celery-redis
       VV8_CELERY_BROKER_PORT: 6379
       VV8_CELERY_ID: vv8_web_server
-      SQL_USER: ${POSTGRES_USER:-vv8}
+      SQL_USERNAME: ${POSTGRES_USER:-vv8}
       SQL_PASSWORD: ${POSTGRES_PASSWORD:-vv8}
       SQL_HOST: vv8-postgres
       SQL_PORT: 5432
@@ -162,6 +162,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on: [vv8-celery-redis, vv8-postgres]
+    command: ["celery", "--broker=redis://vv8-celery-redis:6379/0", "flower", "--port=5555", "--persistent=True", "--db=/etc/db/flower.db"]
     environment:
       FLOWER_UNAUTHENTICATED_API: "True"
     ports:
@@ -203,9 +204,9 @@ services:
       - "15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "status"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 15s
+      timeout: 10s
+      retries: 10
     volumes:
       - ./data/bbsa/rabbit:/var/lib/rabbitmq
     networks: [artifact_net]

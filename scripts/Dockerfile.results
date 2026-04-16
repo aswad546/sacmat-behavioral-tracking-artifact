@@ -1,0 +1,4 @@
+FROM python:3.11-slim
+RUN pip install --no-cache-dir psycopg2-binary==2.9.9
+COPY check_results.py /app/check_results.py
+CMD ["python", "/app/check_results.py"]
