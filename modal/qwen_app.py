@@ -9,11 +9,11 @@ API_KEY = "token-abc123"
 PORT = 8000
 
 image = (
-    modal.Image.debian_slim(python_version="3.11")
+    modal.Image.debian_slim(python_version="3.12")
     .pip_install(
-        "vllm==0.6.3.post1",
-        "huggingface_hub[hf_transfer]==0.26.2",
-        "transformers==4.45.2",
+        "vllm==0.9.2",
+        "transformers>=4.51",
+        "huggingface_hub[hf_transfer]",
     )
     .env({"HF_HUB_ENABLE_HF_TRANSFER": "1"})
 )
@@ -26,9 +26,9 @@ hf_cache = modal.Volume.from_name("sacmat-hf-cache", create_if_missing=True)
     gpu="L40S",
     volumes={"/root/.cache/huggingface": hf_cache},
     timeout=30 * 60,
-    container_idle_timeout=120,
-    allow_concurrent_inputs=10,
+    scaledown_window=120,
 )
+@modal.concurrent(max_inputs=10)
 @modal.web_server(port=PORT, startup_timeout=10 * 60)
 def serve():
     subprocess.Popen([
