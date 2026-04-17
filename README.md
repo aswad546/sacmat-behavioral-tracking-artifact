@@ -9,6 +9,9 @@ artifact runs the full pipeline (minus LoginGPT's VLM navigation) on a 16 GB /
 12-core laptop using Docker Compose. Pre-computed LoginGPT results are included
 as seed data so the pipeline can be evaluated end-to-end without GPU access.
 
+<img width="4400" height="2908" alt="image" src="https://github.com/user-attachments/assets/06f892d1-5cac-4351-98dc-2de25ad8dad4" />
+
+
 ## Prerequisites
 
 - Docker Desktop running
@@ -168,7 +171,7 @@ BehavioralBiometricSA/            git submodule (static analysis)
 
 ## Hardware requirements
 
-- **Minimum:** 16 GB RAM, 12 CPU cores, Docker Desktop
+- **Minimum:** 16 GB RAM, 12 CPU cores, Docker Desktop **Tested on Windows Machines**
 - **Recommended:** 32 GB RAM, 16 cores for faster PDG construction
 - **For LoginGPT:** any OpenAI-compatible VLM endpoint (GPU not needed locally)
 - **Original study:** 160 CPUs, 1 TB RAM, 2× A100 GPUs across 4 machines
