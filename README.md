@@ -220,9 +220,9 @@ make analyze-only              # BBSA static analysis only
 make full                      # everything wired end-to-end
 ```
 
-## Scaling up
+## Scaling up 
 
-Edit `.env` to increase parallelism:
+Edit `.env` to increase parallelism (for 12 core 16GB RAM host keep default configuration from example.env file):
 
 ```
 WORKER_REPLICAS=8              # LoginGPT browser instances
