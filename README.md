@@ -11,88 +11,164 @@ as seed data so the pipeline can be evaluated end-to-end without GPU access.
 
 <img width="4400" height="2908" alt="image" src="https://github.com/user-attachments/assets/06f892d1-5cac-4351-98dc-2de25ad8dad4" />
 
+## Hardware requirements
+
+| | Minimum | Recommended |
+|---|---|---|
+| RAM | 16 GB | 32 GB |
+| CPU | 12 cores | 16+ cores |
+| OS | **Windows 11 (tested)** | Windows 11 |
+| Software | Docker Desktop, Git | Docker Desktop, Git, Python 3.10+ |
+| GPU | Not required | Not required |
+
+> **Note:** This artifact was developed and tested on Windows 11 with Docker
+> Desktop. Windows is the recommended platform. Linux and macOS should work
+> but have not been tested.
 
 ## Prerequisites
 
-- Docker Desktop running
-- Port forwarding set up (if running remotely via VS Code / SSH):
-  - `5555` — Flower (Celery task monitor)
-  - `15672` — RabbitMQ management UI
-  - `4000` — VV8 backend API
-  - `8100` — BBSA API
-  - `3000` — Grafana (optional, for observability)
-  - `16686` — Jaeger (optional, for tracing)
+1. **Install Docker Desktop** and make sure it is running 
+2. **Install Git** (with Git Bash on Windows)
+3. **Install Python 3.10+** with `requests` package (`pip install requests`)
+4. **If running remotely** (e.g., via VS Code Remote SSH), set up port forwarding for these ports:
+
+| Port | Service | What it shows |
+|---|---|---|
+| 5555 | Flower | VV8 crawl task status (SUCCESS/FAILURE) |
+| 15672 | RabbitMQ | BBSA job queue depth (how many scripts left to analyze) |
+| 4000 | VV8 backend | API for submitting URLs |
+| 8100 | BBSA API | API for static analysis submissions |
+| 3000 | Grafana | Logs and dashboards (optional) |
 
 ## Quick start (no GPU required)
 
-```
+Follow these steps exactly in order. Each step must complete before moving to
+the next.
+
+### Step 1: Clone and configure
+
+Open a terminal (Git Bash on Windows) and run:
+
+```bash
 git clone --recursive https://github.com/aswad546/sacmat-behavioral-tracking-artifact.git
 cd sacmat-behavioral-tracking-artifact
 cp .env.example .env
 ```
 
-### Step 1: Start the full pipeline
+> **Important:** The `--recursive` flag is required. It pulls the three
+> subsystem repos (LoginGPT, visiblev8-crawler, BehavioralBiometricSA) as
+> git submodules. If you forgot it, run: `git submodule update --init --recursive`
 
-Both VV8 (crawl) and BBSA (static analysis) must run together — BBSA processes
-scripts as VV8 produces them:
+### Step 2: Start the pipeline
 
-```
+Start both VV8 (crawler) and BBSA (static analysis) together. They must run
+at the same time — BBSA processes scripts as VV8 produces them:
+
+```bash
 docker compose -f docker-compose.artifact.yml --profile crawl --profile sa up -d
 ```
 
-### Step 2: Submit URLs
+Wait about 30 seconds for all containers to start. Verify everything is
+running:
 
-Submit the pre-seeded login candidates to VV8:
-
+```bash
+docker ps
 ```
+
+You should see containers for: `vv8-backend`, `vv8-worker`, `vv8-postgres`,
+`vv8-celery-redis`, `vv8-mongo`, `vv8-flower`, `vv8-log-parser-worker`,
+`vv8-celery-exporter`, `vv8-redis-exporter`, `vv8-bbsa-forwarder`,
+`bbsa-api`, `bbsa-rabbit`, and `bbsa-worker` (multiple replicas).
+
+> **If `bbsa-rabbit` shows as unhealthy:** RabbitMQ can take up to 2 minutes
+> to start. Wait and run `docker ps` again. Dependent containers will start
+> automatically once it's healthy.
+
+### Step 3: Submit URLs to VV8
+
+Submit the 20 pre-seeded bank website URLs to the VV8 crawler:
+
+```bash
 python scripts/submit_to_vv8.py
 ```
 
-### Step 3: Monitor progress
-
-Open **Flower** at http://localhost:5555 to watch VV8 crawl tasks. Each URL
-spawns a Celery task that runs the instrumented Chromium browser. Wait until
-all tasks show as `SUCCESS` or `FAILURE` — this means VV8 has finished
-crawling and the log parser has extracted scripts into `script_flow`.
-
-Open **RabbitMQ** at http://localhost:15672 (guest/guest) → Queues tab →
-`job_queue`. This shows how many scripts are queued for BBSA static analysis.
-The message count will climb as VV8 finishes crawling, then decrease as the
-BBSA workers process each script (PDG construction can take up to 450 seconds
-per script).
-
-Check the numbers:
-
+You should see output like:
 ```
+OK    www.fandm.bank -> https://www.fandm.bank/
+OK    www.fnbforyou.com -> https://www.olb-ebanking.com/064107994/login/
+...
+submitted 13, skipped 7 (no candidates)
+```
+
+13 URLs with login candidates get submitted; 7 control URLs (no candidates)
+are skipped. This is expected.
+
+### Step 4: Wait for VV8 to finish crawling
+
+Open **Flower** in your browser: http://localhost:5555
+
+This shows VV8's Celery task queue. Each submitted URL becomes a task. Wait
+until all tasks show status `SUCCESS` (green) or `FAILURE` (red). This
+typically takes 5-15 minutes depending on your machine and network speed.
+
+> **What's happening:** For each URL, VV8 launches an instrumented Chromium
+> browser, loads the page, triggers behavioral events (clicks, keystrokes,
+> mouse movements), and records every JavaScript API call. The log parser
+> then extracts individual scripts and inserts them into the `script_flow`
+> table in Postgres.
+
+### Step 5: Wait for BBSA to finish static analysis
+
+Open **RabbitMQ Management** in your browser: http://localhost:15672
+- Username: `guest`
+- Password: `guest`
+
+Go to the **Queues** tab and look at `job_queue`. The **Messages** column shows
+how many scripts are queued for static analysis.
+
+This number will:
+1. **Go up** as VV8 finishes crawling and the forwarder sends script IDs to BBSA
+2. **Go down** as BBSA workers process each script (building program dependence
+   graphs, extracting features)
+
+**Wait until `job_queue` Messages reaches 0.** This means all scripts have
+been analyzed. This can take 30-60 minutes — PDG construction takes up to
+450 seconds per complex script.
+
+You can also check progress from the terminal:
+
+```bash
 make results
 ```
 
-This prints:
-- `scripts collected` — total scripts in `script_flow` (populated by VV8)
-- `scripts analyzed` — completed rows in `multicore_static_info` (populated by BBSA)
+This prints how many scripts have been collected vs analyzed.
 
-### Step 4: Run the classifier
+### Step 6: Run the classifier
 
-When the RabbitMQ `job_queue` is empty (all scripts processed by BBSA), run
-the Random Forest classifier:
+Once the RabbitMQ `job_queue` is empty (all scripts analyzed), run the
+Random Forest classifier:
 
-```
+```bash
 make classify
 ```
 
-This reads `multicore_static_info`, derives 12 vendor-agnostic features per
-script, and classifies each as behavioral biometric or benign. Output lands in
-`rf_classification_results` table. See `classifier/README.md` for details.
-
-### Step 5: View results
-
+This will print a summary like:
 ```
+Total scripts processed: 30
+Classified as behavioral biometric: 2 (6.7%)
+Classified as benign: 28 (93.3%)
+Average confidence: 0.952
+```
+
+### Step 7: View final results
+
+```bash
 make results
 ```
 
-To see which specific scripts were flagged as behavioral biometric tracking:
+To see which specific scripts were flagged as behavioral biometric:
 
-```
+```bash
 docker compose -f docker-compose.artifact.yml exec vv8-postgres \
   psql -U vv8 -d vv8_backend -c \
   "SELECT r.script_id, sf.url, r.behavioral_biometric_probability, r.confidence_level
@@ -102,13 +178,26 @@ docker compose -f docker-compose.artifact.yml exec vv8-postgres \
    ORDER BY r.behavioral_biometric_probability DESC;"
 ```
 
+### Step 8: Shut down
+
+```bash
+docker compose -f docker-compose.artifact.yml --profile crawl --profile sa down
+```
+
+Your data persists in `./data/`. Next time you `up`, everything picks up
+where you left off.
+
+---
+
 ## LoginGPT + vision-language models (optional, requires GPU)
 
 LoginGPT uses two VLMs (Qwen2.5-VL-7B for login page classification and
 OS-Atlas-Base-7B for GUI element grounding) to automatically discover login
-pages. For the artifact evaluation, **pre-computed LoginGPT results are
-included as seed data** (`seed/mongo_landscape_seed.json`) — the quick start
-above uses these directly, bypassing LoginGPT entirely.
+pages by navigating websites visually.
+
+For the artifact evaluation, **pre-computed LoginGPT results are included as
+seed data** (`seed/mongo_landscape_seed.json`) — the quick start above uses
+these directly, bypassing LoginGPT entirely.
 
 To test LoginGPT live, provide any OpenAI-compatible VLM endpoint:
 
@@ -118,14 +207,13 @@ To test LoginGPT live, provide any OpenAI-compatible VLM endpoint:
 3. Run `make login-only` to start LoginGPT
 
 The `modal/` directory contains reference deployment scripts for Modal
-(`qwen_app.py`, `os_atlas_app.py`). See `modal/README.md` for setup. These
-require a Modal account and an L40S or A100 GPU allocation.
+(`qwen_app.py`, `os_atlas_app.py`). See `modal/README.md` for setup.
 
 ## Standalone components
 
 Each subsystem can run independently:
 
-```
+```bash
 make login-only                # LoginGPT only (requires VLM endpoints)
 make crawl-only                # VisibleV8 crawler only
 make analyze-only              # BBSA static analysis only
@@ -134,24 +222,39 @@ make full                      # everything wired end-to-end
 
 ## Scaling up
 
+Edit `.env` to increase parallelism:
+
 ```
-WORKER_REPLICAS=8 BBSA_WORKER_REPLICAS=16 CELERY_CONCURRENCY=8 make up
-TARGETS_FILE=targets/targets_full.txt make smoke
+WORKER_REPLICAS=8              # LoginGPT browser instances
+BBSA_WORKER_REPLICAS=16        # static analysis workers
+CELERY_CONCURRENCY=8           # VV8 crawler concurrency
 ```
 
-Drop any newline-separated URL list in `targets/` and point `TARGETS_FILE`
-at it. Adjust replica counts to match available CPU cores.
+To use a different URL list:
+
+```
+TARGETS_FILE=targets/targets_full.txt
+```
+
+Drop any newline-separated URL list in `targets/`.
 
 ## Observability (optional)
 
-```
-make up-obs
+```bash
+docker compose -f docker-compose.artifact.yml -f docker-compose.observability.yml \
+  --profile crawl --profile sa --profile observability up -d
 ```
 
-Adds Jaeger (localhost:16686), Prometheus (9091), Grafana (3000), Loki (3101).
-Use Grafana → Explore → Loki to query container logs:
-- `{container_name=~".*bbsa-worker.*"}` for static analysis logs
-- `{container_name=~".*vv8-worker.*"}` for crawler logs
+This adds:
+- **Grafana** (http://localhost:3000, admin/admin) — dashboards and log search
+- **Jaeger** (http://localhost:16686) — distributed tracing
+- **Prometheus** (http://localhost:9091) — metrics
+- **Loki** — log aggregation (query via Grafana → Explore → Loki)
+
+Useful Loki queries in Grafana:
+- `{container_name=~".*bbsa-worker.*"}` — static analysis logs
+- `{container_name=~".*vv8-worker.*"}` — crawler logs
+- `{container_name=~".*forwarder.*"}` — VV8→BBSA handoff logs
 
 ## Layout
 
@@ -169,27 +272,19 @@ visiblev8-crawler/                git submodule (instrumented JS collection)
 BehavioralBiometricSA/            git submodule (static analysis)
 ```
 
-## Hardware requirements
-
-- **Minimum:** 16 GB RAM, 12 CPU cores, Docker Desktop **Tested on Windows Machines**
-- **Recommended:** 32 GB RAM, 16 cores for faster PDG construction
-- **For LoginGPT:** any OpenAI-compatible VLM endpoint (GPU not needed locally)
-- **Original study:** 160 CPUs, 1 TB RAM, 2× A100 GPUs across 4 machines
-
 ## Troubleshooting
 
-- **No VLM endpoints:** The default path (`scripts/submit_to_vv8.py`) bypasses
-  LoginGPT entirely using pre-seeded data. No Modal or GPU needed.
-- **VV8 Chromium image pull fails:** the `visiblev8/vv8-base` upstream image
-  may have moved. Check `visiblev8-crawler/celery_workers/vv8_worker.dockerfile`.
-- **Port conflicts:** stop conflicting services or edit port bindings in
-  `docker-compose.artifact.yml`.
-- **BBSA worker errors on draw_ast/draw_cfg:** Graphviz rendering of ASTs can
-  fail on complex scripts. These are non-fatal — the actual analysis continues.
-- **RabbitMQ slow to start:** the healthcheck allows 150 seconds. If it still
-  times out, increase `retries` in the compose file.
-- **Flower shows no tasks:** make sure VV8 worker is running (`docker ps | grep vv8-worker`).
-  Check worker logs: `docker compose -f docker-compose.artifact.yml logs vv8-worker --tail=50`.
+| Problem | Solution |
+|---|---|
+| `docker compose` not found | Use `docker-compose` (hyphenated) or update Docker Desktop |
+| `bbsa-rabbit` unhealthy on startup | Wait 2 minutes — RabbitMQ is slow to initialize |
+| `scripts analyzed` stuck at 0 | Check that `--profile sa` is running: `docker ps \| grep bbsa` |
+| BBSA errors about `draw_ast` | Non-fatal — Graphviz rendering fails on some scripts but analysis continues |
+| `No more records to process` in forwarder | Normal — all scripts already sent to BBSA |
+| VV8 worker shows `exec /entrypoint.sh: no such file or directory` | CRLF issue — rebuild: `docker compose ... up -d --build vv8-worker` |
+| Flower (localhost:5555) shows no tasks | VV8 worker may not be running — check `docker ps \| grep vv8-worker` |
+| Port already in use | Stop conflicting services or edit ports in `docker-compose.artifact.yml` |
+| Want to start fresh | `docker compose ... down` then `rm -rf data/` and restart |
 
 ## Paper
 
