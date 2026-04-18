@@ -30,7 +30,8 @@ as seed data so the pipeline can be evaluated end-to-end without GPU access.
 1. **Install Docker Desktop** and make sure it is running 
 2. **Install Git** (with Git Bash on Windows)
 3. **Install Python 3.10+** with `requests` package (`pip install requests`)
-4. **If running remotely** (e.g., via VS Code Remote SSH), set up port forwarding for these ports:
+4. **Install GNU Make** (`make --version` should work in your terminal)
+5. **If running remotely** (e.g., via VS Code Remote SSH), set up port forwarding for these ports:
 
 | Port | Service | What it shows |
 |---|---|---|
@@ -107,9 +108,10 @@ are skipped. This is expected.
 
 Open **Flower** in your browser: http://localhost:5555
 
-This shows VV8's Celery task queue. Each submitted URL becomes a task. Wait
-until all tasks show status `SUCCESS` (green) or `FAILURE` (red). This
-typically takes 5-15 minutes depending on your machine and network speed.
+This shows VV8's Celery task queue. Each submitted URL spawns 2 chained tasks
+(crawl + log parse), so 13 submitted URLs = 26 total tasks. Wait until all 26
+show status `SUCCESS` (green) or `FAILURE` (red). This typically takes 5-15
+minutes depending on your machine and network speed.
 
 > **What's happening:** For each URL, VV8 launches an instrumented Chromium
 > browser, loads the page, triggers behavioral events (clicks, keystrokes,
@@ -124,16 +126,15 @@ Open **RabbitMQ Management** in your browser: http://localhost:15672
 - Password: `guest`
 
 Go to the **Queues** tab and look at `job_queue`. The **Messages** column shows
-how many scripts are queued for static analysis.
+three numbers:
 
-This number will:
-1. **Go up** as VV8 finishes crawling and the forwarder sends script IDs to BBSA
-2. **Go down** as BBSA workers process each script (building program dependence
-   graphs, extracting features)
+- **Ready** — scripts waiting for a worker to pick them up
+- **Unacked** — scripts a worker is currently processing
+- **Total** — Ready + Unacked
 
-**Wait until `job_queue` Messages reaches 0.** This means all scripts have
-been analyzed. This can take 30-60 minutes — PDG construction takes up to
-450 seconds per complex script.
+**Wait until `Total` reaches 0.** Worst case, a single script can take up to
+600 seconds to analyze (PDG construction on complex scripts), so messages may
+sit in `Unacked` for a while — that's normal, just wait it out.
 
 You can also check progress from the terminal:
 
